@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <sys/select.h>
 #include <thread>
+#include <iostream>
 #include "ecdproxy.h"
 #include "config_file.h"
 #include "PciDevice.h"
@@ -36,6 +37,8 @@ static RtlAxiRevision    AxiRevision;
 static RtlIrqManager     AxiIrqManager;
 static RtlRestartManager AxiRestartManager;
 static RtlDataControl    AxiDataControl;
+
+
 
 //==========================================================================================================
 // c() - Shorthand way of converting a std::string to a const char*
