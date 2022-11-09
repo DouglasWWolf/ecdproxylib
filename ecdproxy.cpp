@@ -188,6 +188,9 @@ void CECDProxy::init(string filename)
     // Fetch the TCL script that we will use to program the master bitstream
     cf.get_script_vector("master_programming_script", &config_.masterProgrammingScript);
 
+    // Fetch the TCL script that we will use to program the ECD bitstream
+    cf.get_script_vector("ecd_programming_script", &config_.ecdProgrammingScript);
+
     // Fetch the map that gives the base address of various AXI slave modules
     cf.get("axi_map", &cs);
 
@@ -241,28 +244,42 @@ void CECDProxy::init(string filename)
 
 
 
+
 //==========================================================================================================
-// loadMasterBitstream() - Uses a JTAG programmer to load a bistream into the master FPGA
+// loadBitstream() - Uses a JTAG programmer to load a bistream into the master FPGA
 //
 // Returns: 'true' if the bitstream loaded succesfully, otherwise returns 'false'
 //
-// On Exit: The TCL script will be in "/tmp/load_ master_bistream.tcl"
-//          The Vivado output will be in "/tmp/load_master_bitstream.result"
+// On Exit: The TCL script will be in "/tmp/load_ <master | ecd>_bistream.tcl"
+//          The Vivado output will be in "/tmp/load_<master | ecd>_bitstream.result"
 //          loadError_ will contain the text of any error during the load process
 //==========================================================================================================
-bool CECDProxy::loadMasterBitstream()
+bool CECDProxy::loadBitstream(bool loadMaster)
 {
+    string tclFilename, resultFilename;
+    vector<string> *script;
+
     // Assume for a moment that there won't be any errors
     loadError_ = "";
 
-    // This is the filename of the TCL script we're going to generate
-    string tclFilename = config_.tmpDir + "/load_master_bitstream.tcl";
+    // If we're loading the ECD-Master bitstream...
+    if (loadMaster)
+    {
+        tclFilename    = config_.tmpDir + "/load_master_bitstream.tcl";
+        resultFilename = config_.tmpDir + "/load_master_bitstream.result";
+        script         = &config_.masterProgrammingScript;
+    }
 
-    // This is the name of the file that will contain Vivado output from the load process
-    string resultFilename = config_.tmpDir + "/load_master_bitstream.result";
+    // Otherwise, we're loading the ECD bitstream...
+    else
+    {
+        tclFilename    = config_.tmpDir + "/load_ecd_bitstream.tcl";
+        resultFilename = config_.tmpDir + "/load_ecd_bitstream.result";
+        script         = &config_.ecdProgrammingScript;
+    }
 
     // Write the master-bitstream TCL script to disk
-    if (!writeStrVecToFile(config_.masterProgrammingScript, tclFilename)) 
+    if (!writeStrVecToFile(*script, tclFilename)) 
     {
         loadError_ = "Can't write "+tclFilename;
         return false;
@@ -296,6 +313,45 @@ bool CECDProxy::loadMasterBitstream()
     return (loadError_.empty());
 }
 //==========================================================================================================
+
+
+
+
+
+
+//==========================================================================================================
+// loadMasterBitstream() - Uses a JTAG programmer to load a bistream into the master FPGA
+//
+// Returns: 'true' if the bitstream loaded succesfully, otherwise returns 'false'
+//
+// On Exit: The TCL script will be in "/tmp/load_ master_bistream.tcl"
+//          The Vivado output will be in "/tmp/load_master_bitstream.result"
+//          loadError_ will contain the text of any error during the load process
+//==========================================================================================================
+bool CECDProxy::loadMasterBitstream()
+{
+     return loadBitstream(true);
+}
+//==========================================================================================================
+
+
+
+
+//==========================================================================================================
+// loadEcdBitstream() - Uses a JTAG programmer to load a bistream into the ECD FPGA
+//
+// Returns: 'true' if the bitstream loaded succesfully, otherwise returns 'false'
+//
+// On Exit: The TCL script will be in "/tmp/load_ ecd_bistream.tcl"
+//          The Vivado output will be in "/tmp/load_ecd_bitstream.result"
+//          loadError_ will contain the text of any error during the load process
+//==========================================================================================================
+bool CECDProxy::loadEcdBitstream()
+{
+     return loadBitstream(false);
+}
+//==========================================================================================================
+
 
 
 //==========================================================================================================

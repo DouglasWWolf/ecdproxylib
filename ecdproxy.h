@@ -26,6 +26,9 @@ public:
     // Loads the bitstream into the master FPGA
     bool loadMasterBitstream();
 
+    // Loads the bitstream into the ECD FPGA
+    bool loadEcdBitstream();
+
     // If loading a bitstream fails, this will return an error message
     std::string getLoadError() {return loadError_;}
 
@@ -48,6 +51,9 @@ public:
     virtual void onInterrupt(int irq, uint64_t irqCounter) {};
 
 protected:
+
+    // This is the low-level function that loads a bitstream into an FPGA
+    bool loadBitstream(bool loadMaster);
 
     // This is the number of PCI interrupt sources we are managing
     enum {IRQ_COUNT = 2};
@@ -84,7 +90,7 @@ protected:
         std::string vivado;
         std::string pciDevice;
         std::vector<std::string> masterProgrammingScript;
-        std::vector<std::string> slaveProgrammingScript;
+        std::vector<std::string> ecdProgrammingScript;
 
     } config_;
     
