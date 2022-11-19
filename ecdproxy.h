@@ -47,6 +47,12 @@ public:
     std::string getMasterBitstreamVersion();
     std::string getMasterBitstreamDate();
 
+    // Returns the status bits for a QSFP channel.  Channel should be 0 or 1
+    uint32_t getQsfpStatus(int channel);
+
+    // Call this to determine if the specified QSFP channel is up
+    bool checkQsfpStatus(int channel, bool throwOnFail = false);
+
     // Override this to receive interrupt notifications
     virtual void onInterrupt(int irq, uint64_t irqCounter) {};
 
@@ -77,6 +83,8 @@ protected:
         AM_IRQ_MANAGER,
         AM_RESTART_MANAGER,
         AM_DATA_CONTROL,
+        AM_QSFP0_STATUS,
+        AM_QSFP1_STATUS,
         AM_MAX
     };
 

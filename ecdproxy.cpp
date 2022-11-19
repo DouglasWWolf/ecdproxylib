@@ -22,8 +22,9 @@
 #include "RtlIrqManager.h"
 #include "RtlRestartManager.h"
 #include "RtlDataControl.h"
+#include "RtlQsfpStatus.h"
 
-// Haul in the entire std:: library
+// Haul in the entire std:: namespace
 using namespace std;
 
 // We need one interface to the PCI bus per executable
@@ -37,7 +38,7 @@ static RtlAxiRevision    AxiRevision;
 static RtlIrqManager     AxiIrqManager;
 static RtlRestartManager AxiRestartManager;
 static RtlDataControl    AxiDataControl;
-
+static RtlQsfpStatus     AxiQsfpStatus;
 
 
 //==========================================================================================================
@@ -172,6 +173,7 @@ void CECDProxy::init(string filename)
 {
     CConfigFile cf;
     CConfigScript cs;
+    map<string, int> index;
 
     // If we're not running with root priveleges, give up
     if (geteuid() != 0) throw runtime_error("Must be root to run.  Use sudo.");
@@ -197,44 +199,29 @@ void CECDProxy::init(string filename)
     // Fetch the map that gives the base address of various AXI slave modules
     cf.get("axi_map", &cs);
 
+    // Build the map that translates an RTL-block name into an enum
+    index["master_revision"] = AM_MASTER_REVISION;
+    index["irq_manager"    ] = AM_IRQ_MANAGER;
+    index["restart_manager"] = AM_RESTART_MANAGER;
+    index["data_control"   ] = AM_DATA_CONTROL;
+    index["qsfp0_status"   ] = AM_QSFP0_STATUS;
+    index["qsfp1_status"   ] = AM_QSFP1_STATUS;    
+
     // Loop through each entry in the AXI map
     while (cs.get_next_line())
     {
-        // Fetch the name and base address from the line
+        // Fetch the RTL-block name and AXI base address from the line
         string name = cs.get_next_token();
         uint32_t address = cs.get_next_int();
 
-        // If we're filling in the AXI address of the RTL revision...
-        if (name == "master_revision")
-        {
-            axiMap_[AM_MASTER_REVISION] = address;
-            continue;
-        }
+        // Find this RTL-block name in our map
+        auto it = index.find(name);
 
-        // If we're filling in the AXI address of the interrupt manager...
-        if (name == "irq_manager")
-        {
-            axiMap_[AM_IRQ_MANAGER] = address;
-            continue;
-        }
+        // If we don't recognize the RTL-block name, complain
+        if (it == index.end()) throwRuntime("unknown AXI device '%s'", c(name));
 
-
-        // If we're filling in the AXI address of the restart manager...
-        if (name == "restart_manager")
-        {
-            axiMap_[AM_RESTART_MANAGER] = address;
-            continue;
-        }
-
-        // If we're filling in the AXI address of the data control module...
-        if (name == "data_control")
-        {
-            axiMap_[AM_DATA_CONTROL] = address;
-            continue;
-        }
-
-        // If we get here, we have an unknown module name
-        throwRuntime("unknown AXI device '%s'", c(name));
+        // Fill in the axiMap_ entry for this RTL-block with the AXI address of the block
+        axiMap_[it->second] = address;
     }
 
     // Make sure that every axiMap_ entry was defined
@@ -378,11 +365,13 @@ void CECDProxy::startPCI()
     auto& resource = PCI.resourceList();
 
     // Tell each of the RTL module interfaces what their base address is
-    AxiRevision      .setBaseAddress(resource[0].baseAddr + axiMap_[AM_MASTER_REVISION]);
-    AxiIrqManager    .setBaseAddress(resource[0].baseAddr + axiMap_[AM_IRQ_MANAGER    ]);
-    AxiRestartManager.setBaseAddress(resource[0].baseAddr + axiMap_[AM_RESTART_MANAGER]);    
-    AxiDataControl   .setBaseAddress(resource[0].baseAddr + axiMap_[AM_DATA_CONTROL   ]);    
-
+    AxiRevision      .setBaseAddress(   resource[0].baseAddr + axiMap_[AM_MASTER_REVISION]);
+    AxiIrqManager    .setBaseAddress(   resource[0].baseAddr + axiMap_[AM_IRQ_MANAGER    ]);
+    AxiRestartManager.setBaseAddress(   resource[0].baseAddr + axiMap_[AM_RESTART_MANAGER]);    
+    AxiDataControl   .setBaseAddress(   resource[0].baseAddr + axiMap_[AM_DATA_CONTROL   ]);    
+    AxiQsfpStatus    .setBaseAddress(0, resource[0].baseAddr + axiMap_[AM_QSFP0_STATUS   ]);
+    AxiQsfpStatus    .setBaseAddress(1, resource[0].baseAddr + axiMap_[AM_QSFP1_STATUS   ]);    
+    
     // Spawn the thread that sits in a loop and waits for PCI interrupt notifications
     spawnTopLevelInterruptHandler(uioIndex);
 }
@@ -530,6 +519,39 @@ void CECDProxy::prepareDataTransfer(uint64_t addr0, uint64_t addr1, uint32_t buf
     // And begin transferring data in anticipation of data requests arriving from the ECD
     AxiDataControl.start(addr0, addr1, buffSize);
 }    
+//=================================================================================================
+
+
+//=================================================================================================
+// getQsfpStatus() - Returns the status bits from a QSFP channel
+//=================================================================================================
+uint32_t CECDProxy::getQsfpStatus(int channel)
+{
+    return AxiQsfpStatus.getStatus(channel);    
+}
+//=================================================================================================
+
+//=================================================================================================
+// checkQsfpStatus() - Checks to see if the specified QSFP channel is up.
+//
+// If the specified QSFP channel is NOT up, this routine either returns false or throws a 
+// std::runtime_error exception.
+//=================================================================================================
+bool CECDProxy::checkQsfpStatus(int channel, bool throwOnFail)
+{
+    // If the specified channel is up, return 'true'
+    if (AxiQsfpStatus.checkStatus(channel)) return true;
+
+    // The channel is down.  If the caller wants us to throw an exception...
+    if (throwOnFail)
+    {
+        uint32_t statusBits = AxiQsfpStatus.getStatus(channel);
+        throwRuntime("QSFP channel %i is down (0x%X)", channel, statusBits);
+    }
+
+    // If the channel is down and the caller doesn't want to throw, we'll get here
+    return false; 
+}
 //=================================================================================================
 
 
