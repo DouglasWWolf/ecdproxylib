@@ -15,8 +15,11 @@ uint32_t RtlQsfpStatus::getStatus(int channel)
     // We only care about the bottom bit of 'channel' (i.e., channel should be 0 or 1)
     channel = channel & 1;
 
+    // Channel 0 data is in the bottom 16-bits, channel 1 data is in the top 16-bits
+    int shift = (channel == 0) ? 0 : 16;
+
     // Return the status bits for this QSFP channel
-    return *baseAddr_[channel];
+    return (*baseAddr_ >> shift) & 0xFFFF;
 }
 //==========================================================================================================
 
@@ -24,20 +27,15 @@ uint32_t RtlQsfpStatus::getStatus(int channel)
 //==========================================================================================================
 // checkStatus() - Checks to see if the status bits of the QSFP channel indicate "all good"
 //
-// If the QSFP channel isn't up, this routine either throws a std::runtime_error, or returns false
+// If the QSFP channel isn't up, this routine returns false
 //==========================================================================================================
 bool RtlQsfpStatus::checkStatus(int channel)
 {
-    uint32_t statusGood;
-
     // Ensure that 'channel' is either 0 or 1
     channel = channel & 1;
 
     // Determine which bits must be on for the status of this QSFP channel to be "good"
-    if (channel == 0)
-        statusGood = MASK_CHANNEL_UP | MASK_PLL_LOCK; 
-    else
-        statusGood = MASK_CHANNEL_UP | MASK_PLL_LOCK | MASK_C2C_UP;
+    uint32_t statusGood = MASK_CHANNEL_UP | MASK_PLL_LOCK; 
 
     // Fetch the status-bits for this QSFP channel
     uint32_t status = getStatus(channel);

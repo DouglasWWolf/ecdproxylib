@@ -83,8 +83,7 @@ protected:
         AM_IRQ_MANAGER,
         AM_RESTART_MANAGER,
         AM_DATA_CONTROL,
-        AM_QSFP0_STATUS,
-        AM_QSFP1_STATUS,
+        AM_QSFP_STATUS,
         AM_MAX
     };
 

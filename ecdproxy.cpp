@@ -204,8 +204,7 @@ void CECDProxy::init(string filename)
     index["irq_manager"    ] = AM_IRQ_MANAGER;
     index["restart_manager"] = AM_RESTART_MANAGER;
     index["data_control"   ] = AM_DATA_CONTROL;
-    index["qsfp0_status"   ] = AM_QSFP0_STATUS;
-    index["qsfp1_status"   ] = AM_QSFP1_STATUS;    
+    index["qsfp_status"    ] = AM_QSFP_STATUS;
 
     // Loop through each entry in the AXI map
     while (cs.get_next_line())
@@ -365,12 +364,11 @@ void CECDProxy::startPCI()
     auto& resource = PCI.resourceList();
 
     // Tell each of the RTL module interfaces what their base address is
-    AxiRevision      .setBaseAddress(   resource[0].baseAddr + axiMap_[AM_MASTER_REVISION]);
-    AxiIrqManager    .setBaseAddress(   resource[0].baseAddr + axiMap_[AM_IRQ_MANAGER    ]);
-    AxiRestartManager.setBaseAddress(   resource[0].baseAddr + axiMap_[AM_RESTART_MANAGER]);    
-    AxiDataControl   .setBaseAddress(   resource[0].baseAddr + axiMap_[AM_DATA_CONTROL   ]);    
-    AxiQsfpStatus    .setBaseAddress(0, resource[0].baseAddr + axiMap_[AM_QSFP0_STATUS   ]);
-    AxiQsfpStatus    .setBaseAddress(1, resource[0].baseAddr + axiMap_[AM_QSFP1_STATUS   ]);    
+    AxiRevision      .setBaseAddress(resource[0].baseAddr + axiMap_[AM_MASTER_REVISION]);
+    AxiIrqManager    .setBaseAddress(resource[0].baseAddr + axiMap_[AM_IRQ_MANAGER    ]);
+    AxiRestartManager.setBaseAddress(resource[0].baseAddr + axiMap_[AM_RESTART_MANAGER]);    
+    AxiDataControl   .setBaseAddress(resource[0].baseAddr + axiMap_[AM_DATA_CONTROL   ]);    
+    AxiQsfpStatus    .setBaseAddress(resource[0].baseAddr + axiMap_[AM_QSFP_STATUS    ]);
     
     // Spawn the thread that sits in a loop and waits for PCI interrupt notifications
     spawnTopLevelInterruptHandler(uioIndex);

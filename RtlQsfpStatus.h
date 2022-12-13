@@ -15,13 +15,11 @@ public:
     {
         MASK_LANE_UP    = 0x0000F,
         MASK_CHANNEL_UP = 0x00010,
-        MASK_PLL_LOCK   = 0x00020,
-        MASK_C2C_UP     = 0x10000,
-        MASK_C2C_ERROR  = 0x20000
+        MASK_PLL_LOCK   = 0x00020
     };
 
     // Call this to set the base address of the RTL module for each channel
-    void     setBaseAddress(int channel, uint8_t* p) {baseAddr_[channel&1] = (volatile uint32_t*)p;}
+    void     setBaseAddress(uint8_t* p) {baseAddr_ = (volatile uint32_t*)p;}
 
     // Call this to return the status bits, with no automatic error checking
     uint32_t getStatus(int channel);
@@ -31,6 +29,6 @@ public:
 
 protected:
 
-    volatile uint32_t* baseAddr_[2];
+    volatile uint32_t* baseAddr_;
 };
 
