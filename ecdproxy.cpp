@@ -503,7 +503,7 @@ void CECDProxy::monitorInterrupts(int uioDevice)
 //=================================================================================================
 // prepareDataTransfer() - Preload the RTL FIFOs and prepare for data transfer to begin
 //=================================================================================================
-void CECDProxy::prepareDataTransfer(uint64_t addr0, uint64_t addr1, uint32_t buffSize)
+void CECDProxy::prepareDataTransfer(uint64_t physAddress, uint32_t buffSize)
 {
     // Place the RTL design into a known state
     AxiRestartManager.restart();
@@ -515,7 +515,7 @@ void CECDProxy::prepareDataTransfer(uint64_t addr0, uint64_t addr1, uint32_t buf
     usleep(500000);
 
     // And begin transferring data in anticipation of data requests arriving from the ECD
-    AxiDataControl.start(addr0, addr1, buffSize);
+    AxiDataControl.start(physAddress, buffSize);
 }    
 //=================================================================================================
 
@@ -528,6 +528,7 @@ uint32_t CECDProxy::getQsfpStatus(int channel)
     return AxiQsfpStatus.getStatus(channel);    
 }
 //=================================================================================================
+
 
 //=================================================================================================
 // checkQsfpStatus() - Checks to see if the specified QSFP channel is up.
@@ -552,13 +553,3 @@ bool CECDProxy::checkQsfpStatus(int channel, bool throwOnFail)
 }
 //=================================================================================================
 
-
-//=================================================================================================
-// notifyBufferFull() - Notifies the data control module that the specified ping-pong buffer has
-//                      been replenished with data.
-//=================================================================================================
-void CECDProxy::notifyBufferFull(int which)
-{
-    AxiDataControl.notifyBufferFull(which);
-}
-//=================================================================================================

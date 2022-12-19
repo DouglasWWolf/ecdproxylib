@@ -37,10 +37,7 @@ public:
     void startPCI();
 
     // Preload the RTL FIFOs and prepare for data transfer to begin
-    void prepareDataTransfer(uint64_t addr0, uint64_t addr1, uint32_t buffSize);    
-
-    // Notify the ECD-Master that a data-buffer has been refilled
-    void notifyBufferFull(int which);
+    void prepareDataTransfer(uint64_t physAddress, uint32_t buffSize);    
 
     // Call these to fetch the version number or date of the master bitstream
     // after it has been loaded
