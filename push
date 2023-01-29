@@ -1,0 +1,3 @@
+git add src/*/* README.md push ecd_proxy.conf CMakeLists.txt
+git commit -m "No change history kept"
+git push origin main
