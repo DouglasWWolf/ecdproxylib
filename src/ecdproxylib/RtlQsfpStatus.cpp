@@ -35,7 +35,7 @@ bool RtlQsfpStatus::checkStatus(int channel)
     channel = channel & 1;
 
     // Determine which bits must be on for the status of this QSFP channel to be "good"
-    uint32_t statusGood = MASK_CHANNEL_UP | MASK_PLL_LOCK; 
+    uint32_t statusGood = MASK_CHANNEL_UP;
 
     // Fetch the status-bits for this QSFP channel
     uint32_t status = getStatus(channel);

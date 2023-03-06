@@ -13,9 +13,7 @@ public:
     // This are the bit-mask values for the value returned by getStatus()
     enum
     {
-        MASK_LANE_UP    = 0x0000F,
-        MASK_CHANNEL_UP = 0x00010,
-        MASK_PLL_LOCK   = 0x00020
+        MASK_CHANNEL_UP = 0x0001
     };
 
     // Call this to set the base address of the RTL module for each channel
