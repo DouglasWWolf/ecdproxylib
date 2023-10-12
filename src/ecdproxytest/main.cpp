@@ -132,7 +132,9 @@ void execute()
     }
 
     // Perform hot-reset, map PCI device resources, init UIO subsystem, etc.
+    printf("startPCI the first time\n");
     proxy.startPCI();
+
 
     // Query the RTL design for revision information and display it
     string version = proxy.getMasterBitstreamVersion();
@@ -152,7 +154,6 @@ void execute()
     // And sleep forever
     cout << "Waiting for interrupts\n";
     while(1) sleep(999999);
-
 }
 //=================================================================================================
 

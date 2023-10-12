@@ -354,6 +354,9 @@ void CECDProxy::startPCI()
     // Perform a "PCIe Hot Reset" to get our resource regions mapped into the physical address space
     PCI.hotReset(config_.pciDevice);
 
+    // Wait a moment for the PCI bus to come back up fully enumerated
+    sleep(2);
+
     // Initialize the Linux Userspace-I/O subsystem
     int uioIndex = UIO.initialize(config_.pciDevice);
 
@@ -428,6 +431,9 @@ void CECDProxy::monitorInterrupts(int uioDevice)
     uint8_t  commandHigh;
     char     filename[64];
 
+    // Clear the interrupt counters to zero
+    memset(interruptCounter_, 0, sizeof interruptCounter_);
+
     // Generate the filename of the psudeo-file that notifies us of interrupts
     sprintf(filename, "/dev/uio%d", uioDevice);
 
@@ -474,9 +480,20 @@ void CECDProxy::monitorInterrupts(int uioDevice)
 
         // Wait for notification that an interrupt has occured
         err = read(uiofd, &interruptCount, 4);
+           
+        // If this read fails, it means that a hot-reset of the PCI bus occured
+        if (err == -1)
+        {
+            close(configfd);
+            close(uiofd);
+            break;
+        }
+            
+        // If we didn't read exactly 4 bytes, something is seriously wrong
         if (err != 4)
         {
             perror("uio read:");
+            fprintf(stderr, "err = %i\n", err);
             exit(1);
         }
 
